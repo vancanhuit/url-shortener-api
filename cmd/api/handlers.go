@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -39,6 +40,29 @@ func (app *application) shorten(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (app *application) remove(w http.ResponseWriter, r *http.Request) {
+	alias := chi.URLParam(r, "alias")
+
+	v := &validator{errors: make(map[string]string)}
+	if validateAlias(v, alias); !v.valid() {
+		failedValidationResponse(w, r, v.errors)
+		return
+	}
+
+	err := app.service.deleteURL(alias)
+	if err != nil {
+		switch {
+		case errors.Is(err, ErrRecordNotFound):
+			notFoundResponse(w, r)
+		default:
+			serverErrorResponse(w, r, err)
+		}
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
 func (app *application) redirect(w http.ResponseWriter, r *http.Request) {
 	alias := chi.URLParam(r, "alias")
 
@@ -50,11 +74,12 @@ func (app *application) redirect(w http.ResponseWriter, r *http.Request) {
 
 	url, err := app.service.getURL(alias)
 	if err != nil {
-		serverErrorResponse(w, r, err)
-		return
-	}
-	if url == "" {
-		notFoundResponse(w, r)
+		switch {
+		case errors.Is(err, ErrRecordNotFound):
+			notFoundResponse(w, r)
+		default:
+			serverErrorResponse(w, r, err)
+		}
 		return
 	}
 

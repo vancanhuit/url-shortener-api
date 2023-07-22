@@ -4,12 +4,15 @@ import (
 	"crypto/sha256"
 	"database/sql"
 	"encoding/base64"
+	"errors"
 
 	"192.168.1.100/homelab/url-shortener/migrations"
 	"github.com/asaskevich/govalidator"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/pressly/goose/v3"
 )
+
+var ErrRecordNotFound = errors.New("record not found")
 
 type model struct {
 	OriginalURL string `json:"original_url"`
@@ -56,8 +59,7 @@ func validateAlias(v *validator, alias string) {
 
 func (s service) createAlias(url string) (string, error) {
 	var alias string
-	query := `SELECT alias FROM urls
-	WHERE original_url = $1`
+	query := `SELECT alias FROM urls WHERE original_url = $1`
 	err := s.db.QueryRow(query, url).Scan(&alias)
 	if err != nil && err != sql.ErrNoRows {
 		return "", err
@@ -68,8 +70,7 @@ func (s service) createAlias(url string) (string, error) {
 
 	hash := sha256.Sum256([]byte(url))
 	alias = base64.URLEncoding.EncodeToString(hash[:])[:11]
-	query = `INSERT INTO urls (original_url, alias)
-	VALUES ($1, $2)`
+	query = `INSERT INTO urls (original_url, alias) VALUES ($1, $2)`
 	_, err = s.db.Exec(query, url, alias)
 	if err != nil {
 		return "", err
@@ -77,13 +78,35 @@ func (s service) createAlias(url string) (string, error) {
 	return alias, nil
 }
 
+func (s service) deleteURL(alias string) error {
+	query := `DELETE FROM urls WHERE alias = $1`
+	result, err := s.db.Exec(query, alias)
+	if err != nil {
+		return err
+	}
+
+	rowsEffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsEffected == 0 {
+		return ErrRecordNotFound
+	}
+
+	return nil
+}
+
 func (s service) getURL(alias string) (string, error) {
-	query := `SELECT original_url FROM urls
-	WHERE alias = $1`
+	query := `SELECT original_url FROM urls WHERE alias = $1`
 	var url string
 	err := s.db.QueryRow(query, alias).Scan(&url)
-	if err != nil && err != sql.ErrNoRows {
-		return "", err
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return "", ErrRecordNotFound
+		default:
+			return "", err
+		}
 	}
 	return url, nil
 }
