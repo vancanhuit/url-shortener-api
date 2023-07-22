@@ -59,6 +59,7 @@ func writeJSON(w http.ResponseWriter, statusCode int, data map[string]interface{
 	if err != nil {
 		return err
 	}
+	js = append(js, '\n')
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
 	w.Write(js)
