@@ -7,21 +7,21 @@ import (
 )
 
 func (app *application) shorten(w http.ResponseWriter, r *http.Request) {
-	var req struct {
+	var input struct {
 		URL string `json:"url"`
 	}
-	if err := readJSON(w, r, &req); err != nil {
+	if err := readJSON(w, r, &input); err != nil {
 		badRequestResponse(w, r, err)
 		return
 	}
 
 	v := &validator{errors: make(map[string]string)}
-	if validateURL(v, req.URL); !v.valid() {
+	if validateURL(v, input.URL); !v.valid() {
 		failedValidationResponse(w, r, v.errors)
 		return
 	}
 
-	alias, err := app.service.createAlias(req.URL)
+	alias, err := app.service.createAlias(input.URL)
 	if err != nil {
 		serverErrorResponse(w, r, err)
 		return
@@ -29,7 +29,7 @@ func (app *application) shorten(w http.ResponseWriter, r *http.Request) {
 
 	data := map[string]interface{}{
 		"data": model{
-			OriginalURL: req.URL,
+			OriginalURL: input.URL,
 			Alias:       alias,
 		},
 	}
