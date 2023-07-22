@@ -56,5 +56,5 @@ func (app *application) redirect(w http.ResponseWriter, r *http.Request) {
 		notFoundResponse(w, r)
 		return
 	}
-	http.Redirect(w, r, url, http.StatusSeeOther)
+	http.Redirect(w, r, url, http.StatusFound)
 }
