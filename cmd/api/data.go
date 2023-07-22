@@ -72,7 +72,7 @@ func (s service) createAlias(url string) (string, error) {
 	hash := sha256.Sum256([]byte(url))
 	alias = base64.URLEncoding.EncodeToString(hash[:])[:11]
 
-	query = ` INSERT INTO urls (original_url, alias)
+	query = `INSERT INTO urls (original_url, alias)
 	VALUES ($1, $2)`
 
 	_, err = s.db.Exec(query, url, alias)
@@ -84,8 +84,7 @@ func (s service) createAlias(url string) (string, error) {
 }
 
 func (s service) getURL(alias string) (string, error) {
-	query := `
-	SELECT original_url FROM urls
+	query := `SELECT original_url FROM urls
 	WHERE alias = $1`
 
 	var url string
