@@ -22,6 +22,9 @@ func (app *application) routes() http.Handler {
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 
+	r.NotFound(notFoundResponse)
+	r.MethodNotAllowed(methodNotAllowedResponse)
+
 	r.Post("/api/shorten", app.shorten)
 	r.Get("/{alias}", app.redirect)
 

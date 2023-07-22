@@ -1,10 +1,8 @@
 package main
 
 import (
-	"encoding/json"
 	"net/http"
 
-	"github.com/asaskevich/govalidator"
 	"github.com/go-chi/chi/v5"
 )
 
@@ -12,56 +10,51 @@ func (app *application) shorten(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		URL string `json:"url"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+	if err := readJSON(w, r, &req); err != nil {
+		badRequestResponse(w, r, err)
 		return
 	}
 
-	if req.URL == "" {
-		http.Error(w, "Bad request", http.StatusBadRequest)
-		return
-	}
-
-	if !govalidator.IsURL(req.URL) {
-		http.Error(w, "Bad request", http.StatusBadRequest)
+	v := &validator{errors: make(map[string]string)}
+	if validateURL(v, req.URL); !v.valid() {
+		failedValidationResponse(w, r, v.errors)
 		return
 	}
 
 	alias, err := app.service.createAlias(req.URL)
 	if err != nil {
-		http.Error(w, "Server error", http.StatusInternalServerError)
+		serverErrorResponse(w, r, err)
 		return
 	}
 
-	resp := map[string]interface{}{
+	data := map[string]interface{}{
 		"data": model{
 			OriginalURL: req.URL,
 			Alias:       alias,
 		},
 	}
 
-	payload, err := json.Marshal(&resp)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+	if err := writeJSON(w, http.StatusCreated, data); err != nil {
+		serverErrorResponse(w, r, err)
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	w.Write(payload)
 }
 
 func (app *application) redirect(w http.ResponseWriter, r *http.Request) {
 	alias := chi.URLParam(r, "alias")
+	v := &validator{errors: make(map[string]string)}
+	if validateAlias(v, alias); !v.valid() {
+		failedValidationResponse(w, r, v.errors)
+		return
+	}
 	url, err := app.service.getURL(alias)
 	if err != nil {
-		http.Error(w, "Server error", http.StatusInternalServerError)
+		serverErrorResponse(w, r, err)
 		return
 	}
 	if url == "" {
-		http.Error(w, "Not found", http.StatusNotFound)
+		notFoundResponse(w, r)
 		return
 	}
-
 	http.Redirect(w, r, url, http.StatusSeeOther)
 }

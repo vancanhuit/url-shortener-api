@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 
 	"192.168.1.100/homelab/url-shortener/migrations"
+	"github.com/asaskevich/govalidator"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/pressly/goose/v3"
 )
@@ -43,6 +44,17 @@ func migrateDB(db *sql.DB) error {
 	return nil
 }
 
+func validateURL(v *validator, url string) {
+	v.check(url != "", "url", "must be provided")
+	v.check(len(url) <= 500, "url", "must not be more than 500 bytes long")
+	v.check(govalidator.IsURL(url), "url", "must be a valid URL")
+}
+
+func validateAlias(v *validator, alias string) {
+	v.check(alias != "", "alias", "must be provided")
+	v.check(len(alias) <= 11, "alias", "must not be more than 11 bytes long")
+}
+
 func (s service) createAlias(url string) (string, error) {
 	hash := sha256.Sum256([]byte(url))
 	alias := base64.URLEncoding.EncodeToString(hash[:])[:11]
@@ -53,7 +65,7 @@ func (s service) createAlias(url string) (string, error) {
 
 	_, err := s.db.Exec(query, url, alias)
 	if err != nil {
-		return "", nil
+		return "", err
 	}
 
 	return alias, nil
