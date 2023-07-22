@@ -34,7 +34,6 @@ func openDB(dsn string) (*sql.DB, error) {
 func migrateDB(db *sql.DB) error {
 	goose.SetBaseFS(migrations.FS)
 	defer goose.SetBaseFS(nil)
-
 	if err := goose.SetDialect("postgres"); err != nil {
 		return err
 	}
@@ -57,10 +56,8 @@ func validateAlias(v *validator, alias string) {
 
 func (s service) createAlias(url string) (string, error) {
 	var alias string
-
 	query := `SELECT alias FROM urls
 	WHERE original_url = $1`
-
 	err := s.db.QueryRow(query, url).Scan(&alias)
 	if err != nil && err != sql.ErrNoRows {
 		return "", err
@@ -71,27 +68,22 @@ func (s service) createAlias(url string) (string, error) {
 
 	hash := sha256.Sum256([]byte(url))
 	alias = base64.URLEncoding.EncodeToString(hash[:])[:11]
-
 	query = `INSERT INTO urls (original_url, alias)
 	VALUES ($1, $2)`
-
 	_, err = s.db.Exec(query, url, alias)
 	if err != nil {
 		return "", err
 	}
-
 	return alias, nil
 }
 
 func (s service) getURL(alias string) (string, error) {
 	query := `SELECT original_url FROM urls
 	WHERE alias = $1`
-
 	var url string
 	err := s.db.QueryRow(query, alias).Scan(&url)
 	if err != nil && err != sql.ErrNoRows {
 		return "", err
 	}
-
 	return url, nil
 }

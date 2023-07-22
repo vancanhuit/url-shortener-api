@@ -37,16 +37,17 @@ func (app *application) shorten(w http.ResponseWriter, r *http.Request) {
 	if err := writeJSON(w, http.StatusCreated, data); err != nil {
 		serverErrorResponse(w, r, err)
 	}
-
 }
 
 func (app *application) redirect(w http.ResponseWriter, r *http.Request) {
 	alias := chi.URLParam(r, "alias")
+
 	v := &validator{errors: make(map[string]string)}
 	if validateAlias(v, alias); !v.valid() {
 		failedValidationResponse(w, r, v.errors)
 		return
 	}
+
 	url, err := app.service.getURL(alias)
 	if err != nil {
 		serverErrorResponse(w, r, err)
@@ -56,5 +57,6 @@ func (app *application) redirect(w http.ResponseWriter, r *http.Request) {
 		notFoundResponse(w, r)
 		return
 	}
+
 	http.Redirect(w, r, url, http.StatusFound)
 }
