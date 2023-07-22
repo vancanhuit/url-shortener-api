@@ -57,7 +57,7 @@ func validateAlias(v *validator, alias string) {
 	v.check(len(alias) <= 11, "alias", "must not be more than 11 bytes long")
 }
 
-func (s service) createAlias(url string) (string, error) {
+func (s service) createAlias(url string, reqID string) (string, error) {
 	var alias string
 	query := `SELECT alias FROM urls WHERE original_url = $1`
 	err := s.db.QueryRow(query, url).Scan(&alias)
@@ -68,7 +68,7 @@ func (s service) createAlias(url string) (string, error) {
 		return alias, nil
 	}
 
-	hash := sha256.Sum256([]byte(url))
+	hash := sha256.Sum256([]byte(url + reqID))
 	alias = base64.URLEncoding.EncodeToString(hash[:])[:11]
 	query = `INSERT INTO urls (original_url, alias) VALUES ($1, $2)`
 	_, err = s.db.Exec(query, url, alias)

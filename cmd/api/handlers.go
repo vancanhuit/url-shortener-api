@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 )
 
 func (app *application) shorten(w http.ResponseWriter, r *http.Request) {
@@ -22,7 +23,9 @@ func (app *application) shorten(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	alias, err := app.service.createAlias(input.URL)
+	reqID := middleware.GetReqID(r.Context())
+
+	alias, err := app.service.createAlias(input.URL, reqID)
 	if err != nil {
 		serverErrorResponse(w, r, err)
 		return
