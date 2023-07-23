@@ -118,6 +118,7 @@ func TestAPIWithValidInput(t *testing.T) {
 	defer ts.Close()
 
 	url := "https://reddit.com"
+	alias := ""
 
 	var envelope struct {
 		Data struct {
@@ -132,14 +133,19 @@ func TestAPIWithValidInput(t *testing.T) {
 		require.Equal(t, contentType, header.Get(contentTypeHeader))
 		err = json.Unmarshal(body, &envelope)
 		require.NoError(t, err)
+		alias = envelope.Data.Alias
 		require.Equal(t, url, envelope.Data.OriginalURL)
 	})
 
 	t.Run("Shorten the same URL", func(t *testing.T) {
 		reqBody := strings.NewReader(fmt.Sprintf(`{"url": "%s"}`, url))
-		statusCode, header, _ := ts.do(t, http.MethodPost, "/api/shorten", reqBody)
+		statusCode, header, body := ts.do(t, http.MethodPost, "/api/shorten", reqBody)
 		require.Equal(t, http.StatusCreated, statusCode)
 		require.Equal(t, contentType, header.Get(contentTypeHeader))
+		err = json.Unmarshal(body, &envelope)
+		require.NoError(t, err)
+		require.Equal(t, url, envelope.Data.OriginalURL)
+		require.Equal(t, alias, envelope.Data.Alias)
 	})
 
 	t.Run("Redirect", func(t *testing.T) {
