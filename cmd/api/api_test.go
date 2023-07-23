@@ -67,10 +67,7 @@ func connectToTestDB(t *testing.T) (*sql.DB, error) {
 
 	err = pool.Retry(func() error {
 		db, err = openDB(dsn)
-		if err != nil {
-			return err
-		}
-		return db.Ping()
+		return err
 	})
 	if err != nil {
 		return nil, err
