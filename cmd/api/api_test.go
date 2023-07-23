@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"database/sql"
 	"encoding/json"
 	"fmt"
@@ -14,6 +15,10 @@ import (
 	"github.com/ory/dockertest/v3"
 	"github.com/stretchr/testify/require"
 )
+
+type testServer struct {
+	*httptest.Server
+}
 
 var pool *dockertest.Pool
 
@@ -75,12 +80,26 @@ func connectToTestDB(t *testing.T) (*sql.DB, error) {
 	return db, nil
 }
 
-func newTestServer(t *testing.T, h http.Handler) *httptest.Server {
+func newTestServer(t *testing.T, h http.Handler) *testServer {
 	ts := httptest.NewServer(h)
 	ts.Client().CheckRedirect = func(req *http.Request, via []*http.Request) error {
 		return http.ErrUseLastResponse
 	}
-	return ts
+	return &testServer{ts}
+}
+
+func (ts *testServer) do(t *testing.T, method, urlPath string, reqBody io.Reader) (int, http.Header, []byte) {
+	req, err := http.NewRequest(method, ts.URL+urlPath, reqBody)
+	require.NoError(t, err)
+	resp, err := ts.Client().Do(req)
+	require.NoError(t, err)
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	require.NoError(t, err)
+	bytes.TrimSpace(body)
+
+	return resp.StatusCode, resp.Header, body
 }
 
 func TestAPI(t *testing.T) {
@@ -96,56 +115,32 @@ func TestAPI(t *testing.T) {
 	url := "https://reddit.com"
 	reqBody := strings.NewReader(fmt.Sprintf(`{"url": "%s"}`, url))
 
-	resp1, err := ts.Client().Post(ts.URL+"/api/shorten", contentType, reqBody)
-	require.NoError(t, err)
-	defer resp1.Body.Close()
-	// resp2, err := ts.Client().Post(ts.URL+"/api/shorten", contentType, reqBody)
-	// require.NoError(t, err)
-	// defer resp2.Body.Close()
-
-	require.Equal(t, http.StatusCreated, resp1.StatusCode)
-	require.Equal(t, contentType, resp1.Header.Get("Content-Type"))
-	//require.Equal(t, http.StatusCreated, resp2.StatusCode)
-	//require.Equal(t, contentType, resp2.Header.Get("Content-Type"))
+	statusCode, header, body := ts.do(t, http.MethodPost, "/api/shorten", reqBody)
+	require.Equal(t, http.StatusCreated, statusCode)
+	require.Equal(t, contentType, header.Get("Content-Type"))
 
 	var envelope struct {
 		Data struct {
 			model
 		} `json:"data"`
 	}
-	body1, err := io.ReadAll(resp1.Body)
+
+	err = json.Unmarshal(body, &envelope)
 	require.NoError(t, err)
-	//body2, err := io.ReadAll(resp2.Body)
-	//require.NoError(t, err)
-
-	//require.Equal(t, body1, body2)
-
-	err = json.Unmarshal(body1, &envelope)
-	require.NoError(t, err)
-
 	require.Equal(t, url, envelope.Data.OriginalURL)
 
-	resp3, err := ts.Client().Get(ts.URL + "/" + envelope.Data.Alias)
-	require.NoError(t, err)
-	defer resp3.Body.Close()
+	statusCode, header, _ = ts.do(t, http.MethodGet, "/"+envelope.Data.Alias, nil)
+	require.Equal(t, http.StatusFound, statusCode)
+	require.Equal(t, envelope.Data.OriginalURL, header.Get("Location"))
 
-	require.Equal(t, http.StatusFound, resp3.StatusCode)
-	require.Equal(t, envelope.Data.OriginalURL, resp3.Header.Get("Location"))
+	statusCode, _, _ = ts.do(t, http.MethodDelete, "/"+envelope.Data.Alias, nil)
+	require.Equal(t, http.StatusNoContent, statusCode)
 
-	req, err := http.NewRequest(http.MethodDelete, ts.URL+"/"+envelope.Data.Alias, nil)
-	require.NoError(t, err)
-	resp4, err := ts.Client().Do(req)
-	require.NoError(t, err)
-	defer resp4.Body.Close()
-	require.Equal(t, http.StatusNoContent, resp4.StatusCode)
+	statusCode, header, _ = ts.do(t, http.MethodGet, "/"+envelope.Data.Alias, nil)
+	require.Equal(t, http.StatusNotFound, statusCode)
+	require.Equal(t, contentType, header.Get(contentTypeHeader))
 
-	resp5, err := ts.Client().Get(ts.URL + "/" + envelope.Data.Alias)
-	require.NoError(t, err)
-	defer resp5.Body.Close()
-	require.Equal(t, http.StatusNotFound, resp5.StatusCode)
-
-	resp6, err := ts.Client().Do(req)
-	require.NoError(t, err)
-	defer resp6.Body.Close()
-	require.Equal(t, http.StatusNotFound, resp6.StatusCode)
+	statusCode, _, _ = ts.do(t, http.MethodDelete, "/"+envelope.Data.Alias, nil)
+	require.Equal(t, http.StatusNotFound, statusCode)
+	require.Equal(t, contentType, header.Get(contentTypeHeader))
 }

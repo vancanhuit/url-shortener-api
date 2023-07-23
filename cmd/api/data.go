@@ -12,7 +12,7 @@ import (
 	"github.com/pressly/goose/v3"
 )
 
-var ErrRecordNotFound = errors.New("record not found")
+var errRecordNotFound = errors.New("record not found")
 
 type model struct {
 	OriginalURL string `json:"original_url"`
@@ -90,7 +90,7 @@ func (s service) deleteURL(alias string) error {
 		return err
 	}
 	if rowsEffected == 0 {
-		return ErrRecordNotFound
+		return errRecordNotFound
 	}
 
 	return nil
@@ -103,7 +103,7 @@ func (s service) getURL(alias string) (string, error) {
 	if err != nil {
 		switch {
 		case errors.Is(err, sql.ErrNoRows):
-			return "", ErrRecordNotFound
+			return "", errRecordNotFound
 		default:
 			return "", err
 		}

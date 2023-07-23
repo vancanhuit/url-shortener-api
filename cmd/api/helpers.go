@@ -9,6 +9,7 @@ import (
 	"strings"
 )
 
+const contentTypeHeader = "Content-Type"
 const contentType = "application/json"
 
 func readJSON(w http.ResponseWriter, r *http.Request, dst interface{}) error {
@@ -62,7 +63,7 @@ func writeJSON(w http.ResponseWriter, statusCode int, data map[string]interface{
 		return err
 	}
 	js = append(js, '\n')
-	w.Header().Set("Content-Type", contentType)
+	w.Header().Set(contentTypeHeader, contentType)
 	w.WriteHeader(statusCode)
 	w.Write(js)
 	return nil

@@ -55,7 +55,7 @@ func (app *application) remove(w http.ResponseWriter, r *http.Request) {
 	err := app.service.deleteURL(alias)
 	if err != nil {
 		switch {
-		case errors.Is(err, ErrRecordNotFound):
+		case errors.Is(err, errRecordNotFound):
 			notFoundResponse(w, r)
 		default:
 			serverErrorResponse(w, r, err)
@@ -78,7 +78,7 @@ func (app *application) redirect(w http.ResponseWriter, r *http.Request) {
 	url, err := app.service.getURL(alias)
 	if err != nil {
 		switch {
-		case errors.Is(err, ErrRecordNotFound):
+		case errors.Is(err, errRecordNotFound):
 			notFoundResponse(w, r)
 		default:
 			serverErrorResponse(w, r, err)
