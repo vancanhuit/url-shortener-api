@@ -115,34 +115,42 @@ func TestAPIWithValidInput(t *testing.T) {
 	url := "https://reddit.com"
 	reqBody := strings.NewReader(fmt.Sprintf(`{"url": "%s"}`, url))
 
-	statusCode, header, body := ts.do(t, http.MethodPost, "/api/shorten", reqBody)
-	require.Equal(t, http.StatusCreated, statusCode)
-	require.Equal(t, contentType, header.Get(contentTypeHeader))
-
 	var envelope struct {
 		Data struct {
 			model
 		} `json:"data"`
 	}
 
-	err = json.Unmarshal(body, &envelope)
-	require.NoError(t, err)
-	require.Equal(t, url, envelope.Data.OriginalURL)
+	t.Run("Shorten", func(t *testing.T) {
+		statusCode, header, body := ts.do(t, http.MethodPost, "/api/shorten", reqBody)
+		require.Equal(t, http.StatusCreated, statusCode)
+		require.Equal(t, contentType, header.Get(contentTypeHeader))
+		err = json.Unmarshal(body, &envelope)
+		require.NoError(t, err)
+		require.Equal(t, url, envelope.Data.OriginalURL)
+	})
 
-	statusCode, header, _ = ts.do(t, http.MethodGet, "/"+envelope.Data.Alias, nil)
-	require.Equal(t, http.StatusFound, statusCode)
-	require.Equal(t, envelope.Data.OriginalURL, header.Get("Location"))
+	t.Run("Redirect", func(t *testing.T) {
+		statusCode, header, _ := ts.do(t, http.MethodGet, "/"+envelope.Data.Alias, nil)
+		require.Equal(t, http.StatusFound, statusCode)
+		require.Equal(t, envelope.Data.OriginalURL, header.Get("Location"))
+	})
 
-	statusCode, _, _ = ts.do(t, http.MethodDelete, "/"+envelope.Data.Alias, nil)
-	require.Equal(t, http.StatusNoContent, statusCode)
+	t.Run("Delete", func(t *testing.T) {
+		statusCode, _, _ := ts.do(t, http.MethodDelete, "/"+envelope.Data.Alias, nil)
+		require.Equal(t, http.StatusNoContent, statusCode)
+	})
 
-	statusCode, header, _ = ts.do(t, http.MethodGet, "/"+envelope.Data.Alias, nil)
-	require.Equal(t, http.StatusNotFound, statusCode)
-	require.Equal(t, contentType, header.Get(contentTypeHeader))
+	t.Run("Not found URL", func(t *testing.T) {
+		statusCode, header, _ := ts.do(t, http.MethodGet, "/"+envelope.Data.Alias, nil)
+		require.Equal(t, http.StatusNotFound, statusCode)
+		require.Equal(t, contentType, header.Get(contentTypeHeader))
 
-	statusCode, header, _ = ts.do(t, http.MethodDelete, "/"+envelope.Data.Alias, nil)
-	require.Equal(t, http.StatusNotFound, statusCode)
-	require.Equal(t, contentType, header.Get(contentTypeHeader))
+		statusCode, header, _ = ts.do(t, http.MethodDelete, "/"+envelope.Data.Alias, nil)
+		require.Equal(t, http.StatusNotFound, statusCode)
+		require.Equal(t, contentType, header.Get(contentTypeHeader))
+	})
+
 }
 
 func TestAPIWithInvalidInput(t *testing.T) {
