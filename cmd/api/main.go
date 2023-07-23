@@ -46,7 +46,7 @@ func main() {
 		log.Fatal(err)
 	}
 	defer db.Close()
-	log.Println("database connection pool established")
+	log.Println("Database connection pool established")
 	err = migrateDB(db)
 	if err != nil {
 		log.Fatal(err)
@@ -59,6 +59,6 @@ func main() {
 		Handler: app.routes(),
 	}
 
-	log.Printf("http server is listening on %s", server.Addr)
+	log.Printf("HTTP server is listening on %s", server.Addr)
 	log.Fatal(server.ListenAndServe())
 }
