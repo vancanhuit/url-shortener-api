@@ -11,9 +11,9 @@ import (
 
 const contentTypeHeader = "Content-Type"
 const contentType = "application/json"
+const maxBytes = 1_048_576
 
 func readJSON(w http.ResponseWriter, r *http.Request, dst interface{}) error {
-	maxBytes := 1_048_576
 	r.Body = http.MaxBytesReader(w, r.Body, int64(maxBytes))
 
 	dec := json.NewDecoder(r.Body)

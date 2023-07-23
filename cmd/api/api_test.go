@@ -2,7 +2,9 @@ package main
 
 import (
 	"bytes"
+	"crypto/rand"
 	"database/sql"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -172,6 +174,10 @@ func TestAPIWithInvalidInput(t *testing.T) {
 	ts := newTestServer(t, app.routes())
 	defer ts.Close()
 
+	largeData := make([]byte, maxBytes)
+	_, err = rand.Read(largeData)
+	require.NoError(t, err)
+
 	testCases := []struct {
 		name       string
 		payload    string
@@ -208,6 +214,11 @@ func TestAPIWithInvalidInput(t *testing.T) {
 			statusCode: http.StatusBadRequest,
 		},
 		{
+			name:       `Request too large`,
+			payload:    fmt.Sprintf(`{"url": "https://%s"}`, base64.URLEncoding.EncodeToString(largeData)),
+			statusCode: http.StatusBadRequest,
+		},
+		{
 			name:       "Missing input",
 			payload:    `{}`,
 			statusCode: http.StatusUnprocessableEntity,
@@ -215,6 +226,11 @@ func TestAPIWithInvalidInput(t *testing.T) {
 		{
 			name:       "Invalid URL",
 			payload:    `{"url": "https://"}`,
+			statusCode: http.StatusUnprocessableEntity,
+		},
+		{
+			name:       "Length of URL is more than 500 bytes",
+			payload:    fmt.Sprintf(`{"url": "https://%s"}`, base64.URLEncoding.EncodeToString(largeData[:500])),
 			statusCode: http.StatusUnprocessableEntity,
 		},
 	}
