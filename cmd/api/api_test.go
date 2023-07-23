@@ -91,6 +91,9 @@ func newTestServer(t *testing.T, h http.Handler) *testServer {
 func (ts *testServer) do(t *testing.T, method, urlPath string, reqBody io.Reader) (int, http.Header, []byte) {
 	req, err := http.NewRequest(method, ts.URL+urlPath, reqBody)
 	require.NoError(t, err)
+	if req.Method == http.MethodPost {
+		req.Header.Set(contentTypeHeader, contentType)
+	}
 	resp, err := ts.Client().Do(req)
 	require.NoError(t, err)
 	defer resp.Body.Close()
@@ -150,7 +153,6 @@ func TestAPIWithValidInput(t *testing.T) {
 		require.Equal(t, http.StatusNotFound, statusCode)
 		require.Equal(t, contentType, header.Get(contentTypeHeader))
 	})
-
 }
 
 func TestAPIWithInvalidInput(t *testing.T) {
@@ -191,6 +193,11 @@ func TestAPIWithInvalidInput(t *testing.T) {
 		{
 			name:       "Unknown key",
 			payload:    `{"urls": "https://example.com"}`,
+			statusCode: http.StatusBadRequest,
+		},
+		{
+			name:       `Multiple JSON values`,
+			payload:    `{"url": "https://example.com"}{}{}`,
 			statusCode: http.StatusBadRequest,
 		},
 		{
