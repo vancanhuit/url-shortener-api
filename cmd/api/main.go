@@ -27,7 +27,7 @@ func (app *application) routes() http.Handler {
 	r.MethodNotAllowed(methodNotAllowedResponse)
 
 	r.Post("/api/shorten", app.shorten)
-	r.Delete("/{alias}", app.remove)
+	r.Delete("/{alias}", app.delete)
 	r.Get("/{alias}", app.redirect)
 
 	return r

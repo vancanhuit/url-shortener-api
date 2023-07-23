@@ -43,7 +43,7 @@ func (app *application) shorten(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (app *application) remove(w http.ResponseWriter, r *http.Request) {
+func (app *application) delete(w http.ResponseWriter, r *http.Request) {
 	alias := chi.URLParam(r, "alias")
 	err := app.service.deleteURL(alias)
 	if err != nil {
