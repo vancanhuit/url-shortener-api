@@ -10,7 +10,6 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/ory/dockertest/v3"
 	"github.com/stretchr/testify/require"
@@ -49,6 +48,36 @@ func startPostgreSQL() (*dockertest.Resource, error) {
 	})
 }
 
+func connectToTestDB(t *testing.T) (*sql.DB, error) {
+	resource, err := startPostgreSQL()
+	if err != nil {
+		return nil, err
+	}
+	t.Cleanup(func() {
+		if err := pool.Purge(resource); err != nil {
+			log.Printf("Failed to purge resource: %s", err)
+		}
+	})
+
+	var db *sql.DB
+	dsn := fmt.Sprintf("postgres://test:test@localhost:%s/test?sslmode=disable", resource.GetPort("5432/tcp"))
+	log.Printf("Connecting to database: %s", dsn)
+
+	resource.Expire(120)
+
+	err = pool.Retry(func() error {
+		db, err = openDB(dsn)
+		if err != nil {
+			return err
+		}
+		return db.Ping()
+	})
+	if err != nil {
+		return nil, err
+	}
+	return db, nil
+}
+
 func newTestServer(t *testing.T, h http.Handler) *httptest.Server {
 	ts := httptest.NewServer(h)
 	ts.Client().CheckRedirect = func(req *http.Request, via []*http.Request) error {
@@ -58,26 +87,7 @@ func newTestServer(t *testing.T, h http.Handler) *httptest.Server {
 }
 
 func TestAPI(t *testing.T) {
-	resource, err := startPostgreSQL()
-	require.NoError(t, err)
-	t.Cleanup(func() {
-		if err := pool.Purge(resource); err != nil {
-			log.Printf("failed to purge resource: %s", err)
-		}
-	})
-	dsn := fmt.Sprintf("postgres://test:test@localhost:%s/test?sslmode=disable", resource.GetPort("5432/tcp"))
-	log.Printf("connecting to database: %s", dsn)
-
-	resource.Expire(120)
-	pool.MaxWait = 120 * time.Second
-	var db *sql.DB
-	err = pool.Retry(func() error {
-		db, err = openDB(dsn)
-		if err != nil {
-			return err
-		}
-		return db.Ping()
-	})
+	db, err := connectToTestDB(t)
 	require.NoError(t, err)
 
 	err = migrateDB(db)
