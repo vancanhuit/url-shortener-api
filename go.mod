@@ -1,4 +1,4 @@
-module 192.168.1.100/homelab/url-shortener
+module github.com/vancanhuit/url-shortener-api
 
 go 1.20
 

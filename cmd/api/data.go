@@ -6,10 +6,10 @@ import (
 	"encoding/base64"
 	"errors"
 
-	"192.168.1.100/homelab/url-shortener/migrations"
 	"github.com/asaskevich/govalidator"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/pressly/goose/v3"
+	"github.com/vancanhuit/url-shortener-api/migrations"
 )
 
 var errRecordNotFound = errors.New("record not found")
