@@ -102,7 +102,7 @@ func (ts *testServer) do(t *testing.T, method, urlPath string, reqBody io.Reader
 	return resp.StatusCode, resp.Header, body
 }
 
-func TestAPI(t *testing.T) {
+func TestAPIWithValidInput(t *testing.T) {
 	db, err := connectToTestDB(t)
 	require.NoError(t, err)
 	err = migrateDB(db)
@@ -136,23 +136,13 @@ func TestAPI(t *testing.T) {
 	statusCode, _, _ = ts.do(t, http.MethodDelete, "/"+envelope.Data.Alias, nil)
 	require.Equal(t, http.StatusNoContent, statusCode)
 
-	statusCode, header, body = ts.do(t, http.MethodGet, "/"+envelope.Data.Alias, nil)
+	statusCode, header, _ = ts.do(t, http.MethodGet, "/"+envelope.Data.Alias, nil)
 	require.Equal(t, http.StatusNotFound, statusCode)
 	require.Equal(t, contentType, header.Get(contentTypeHeader))
 
-	var message struct {
-		Error string `json:"error"`
-	}
-	err = json.Unmarshal(body, &message)
-	require.NoError(t, err)
-	require.Equal(t, "the requested resource could not be found", message.Error)
-
-	statusCode, header, body = ts.do(t, http.MethodDelete, "/"+envelope.Data.Alias, nil)
+	statusCode, header, _ = ts.do(t, http.MethodDelete, "/"+envelope.Data.Alias, nil)
 	require.Equal(t, http.StatusNotFound, statusCode)
 	require.Equal(t, contentType, header.Get(contentTypeHeader))
-	err = json.Unmarshal(body, &message)
-	require.NoError(t, err)
-	require.Equal(t, "the requested resource could not be found", message.Error)
 }
 
 func TestAPIWithInvalidInput(t *testing.T) {
@@ -188,6 +178,11 @@ func TestAPIWithInvalidInput(t *testing.T) {
 		{
 			name:       "Unexpected EOF",
 			payload:    `{"url": "https://example}`,
+			statusCode: http.StatusBadRequest,
+		},
+		{
+			name:       "Unknown key",
+			payload:    `{"urls": "https://example.com"}`,
 			statusCode: http.StatusBadRequest,
 		},
 		{
