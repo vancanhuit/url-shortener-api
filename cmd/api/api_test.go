@@ -86,7 +86,6 @@ func newTestServer(t *testing.T, h http.Handler) *httptest.Server {
 func TestAPI(t *testing.T) {
 	db, err := connectToTestDB(t)
 	require.NoError(t, err)
-
 	err = migrateDB(db)
 	require.NoError(t, err)
 
@@ -94,30 +93,59 @@ func TestAPI(t *testing.T) {
 	ts := newTestServer(t, app.routes())
 	defer ts.Close()
 
-	resp, err := ts.Client().Post(ts.URL+"/api/shorten", "application/json", strings.NewReader(`{"url": "https://reddit.com"}`))
-	require.NoError(t, err)
-	defer resp.Body.Close()
+	url := "https://reddit.com"
+	reqBody := strings.NewReader(fmt.Sprintf(`{"url": "%s"}`, url))
 
-	require.Equal(t, http.StatusCreated, resp.StatusCode)
-	require.Equal(t, "application/json", resp.Header.Get("Content-Type"))
+	resp1, err := ts.Client().Post(ts.URL+"/api/shorten", contentType, reqBody)
+	require.NoError(t, err)
+	defer resp1.Body.Close()
+	// resp2, err := ts.Client().Post(ts.URL+"/api/shorten", contentType, reqBody)
+	// require.NoError(t, err)
+	// defer resp2.Body.Close()
+
+	require.Equal(t, http.StatusCreated, resp1.StatusCode)
+	require.Equal(t, contentType, resp1.Header.Get("Content-Type"))
+	//require.Equal(t, http.StatusCreated, resp2.StatusCode)
+	//require.Equal(t, contentType, resp2.Header.Get("Content-Type"))
 
 	var envelope struct {
 		Data struct {
 			model
 		} `json:"data"`
 	}
-
-	body, err := io.ReadAll(resp.Body)
+	body1, err := io.ReadAll(resp1.Body)
 	require.NoError(t, err)
-	err = json.Unmarshal(body, &envelope)
+	//body2, err := io.ReadAll(resp2.Body)
+	//require.NoError(t, err)
+
+	//require.Equal(t, body1, body2)
+
+	err = json.Unmarshal(body1, &envelope)
 	require.NoError(t, err)
 
-	require.Equal(t, "https://reddit.com", envelope.Data.OriginalURL)
+	require.Equal(t, url, envelope.Data.OriginalURL)
 
-	resp, err = ts.Client().Get(ts.URL + "/" + envelope.Data.Alias)
+	resp3, err := ts.Client().Get(ts.URL + "/" + envelope.Data.Alias)
 	require.NoError(t, err)
-	defer resp.Body.Close()
+	defer resp3.Body.Close()
 
-	require.Equal(t, http.StatusFound, resp.StatusCode)
-	require.Equal(t, envelope.Data.OriginalURL, resp.Header.Get("Location"))
+	require.Equal(t, http.StatusFound, resp3.StatusCode)
+	require.Equal(t, envelope.Data.OriginalURL, resp3.Header.Get("Location"))
+
+	req, err := http.NewRequest(http.MethodDelete, ts.URL+"/"+envelope.Data.Alias, nil)
+	require.NoError(t, err)
+	resp4, err := ts.Client().Do(req)
+	require.NoError(t, err)
+	defer resp4.Body.Close()
+	require.Equal(t, http.StatusNoContent, resp4.StatusCode)
+
+	resp5, err := ts.Client().Get(ts.URL + "/" + envelope.Data.Alias)
+	require.NoError(t, err)
+	defer resp5.Body.Close()
+	require.Equal(t, http.StatusNotFound, resp5.StatusCode)
+
+	resp6, err := ts.Client().Do(req)
+	require.NoError(t, err)
+	defer resp6.Body.Close()
+	require.Equal(t, http.StatusNotFound, resp6.StatusCode)
 }

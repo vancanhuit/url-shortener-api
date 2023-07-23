@@ -9,6 +9,8 @@ import (
 	"strings"
 )
 
+const contentType = "application/json"
+
 func readJSON(w http.ResponseWriter, r *http.Request, dst interface{}) error {
 	maxBytes := 1_048_576
 	r.Body = http.MaxBytesReader(w, r.Body, int64(maxBytes))
@@ -60,7 +62,7 @@ func writeJSON(w http.ResponseWriter, statusCode int, data map[string]interface{
 		return err
 	}
 	js = append(js, '\n')
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Content-Type", contentType)
 	w.WriteHeader(statusCode)
 	w.Write(js)
 	return nil
