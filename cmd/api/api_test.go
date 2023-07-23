@@ -117,7 +117,7 @@ func TestAPI(t *testing.T) {
 
 	statusCode, header, body := ts.do(t, http.MethodPost, "/api/shorten", reqBody)
 	require.Equal(t, http.StatusCreated, statusCode)
-	require.Equal(t, contentType, header.Get("Content-Type"))
+	require.Equal(t, contentType, header.Get(contentTypeHeader))
 
 	var envelope struct {
 		Data struct {
@@ -136,11 +136,78 @@ func TestAPI(t *testing.T) {
 	statusCode, _, _ = ts.do(t, http.MethodDelete, "/"+envelope.Data.Alias, nil)
 	require.Equal(t, http.StatusNoContent, statusCode)
 
-	statusCode, header, _ = ts.do(t, http.MethodGet, "/"+envelope.Data.Alias, nil)
+	statusCode, header, body = ts.do(t, http.MethodGet, "/"+envelope.Data.Alias, nil)
 	require.Equal(t, http.StatusNotFound, statusCode)
 	require.Equal(t, contentType, header.Get(contentTypeHeader))
 
-	statusCode, _, _ = ts.do(t, http.MethodDelete, "/"+envelope.Data.Alias, nil)
+	var message struct {
+		Error string `json:"error"`
+	}
+	err = json.Unmarshal(body, &message)
+	require.NoError(t, err)
+	require.Equal(t, "the requested resource could not be found", message.Error)
+
+	statusCode, header, body = ts.do(t, http.MethodDelete, "/"+envelope.Data.Alias, nil)
 	require.Equal(t, http.StatusNotFound, statusCode)
 	require.Equal(t, contentType, header.Get(contentTypeHeader))
+	err = json.Unmarshal(body, &message)
+	require.NoError(t, err)
+	require.Equal(t, "the requested resource could not be found", message.Error)
+}
+
+func TestAPIWithInvalidInput(t *testing.T) {
+	db, err := connectToTestDB(t)
+	require.NoError(t, err)
+	err = migrateDB(db)
+	require.NoError(t, err)
+
+	app := &application{service: service{db: db}}
+	ts := newTestServer(t, app.routes())
+	defer ts.Close()
+
+	testCases := []struct {
+		name       string
+		payload    string
+		statusCode int
+	}{
+		{
+			name:       "Empty request body",
+			payload:    ``,
+			statusCode: http.StatusBadRequest,
+		},
+		{
+			name:       "Syntax error",
+			payload:    `{"url": https://example}`,
+			statusCode: http.StatusBadRequest,
+		},
+		{
+			name:       "Incorrect value type",
+			payload:    `{"url": 123213}`,
+			statusCode: http.StatusBadRequest,
+		},
+		{
+			name:       "Unexpected EOF",
+			payload:    `{"url": "https://example}`,
+			statusCode: http.StatusBadRequest,
+		},
+		{
+			name:       "Missing input",
+			payload:    `{}`,
+			statusCode: http.StatusUnprocessableEntity,
+		},
+		{
+			name:       "Invalid URL",
+			payload:    `{"url": "https://"}`,
+			statusCode: http.StatusUnprocessableEntity,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			reqBody := strings.NewReader(tc.payload)
+			statusCode, header, _ := ts.do(t, http.MethodPost, "/api/shorten", reqBody)
+			require.Equal(t, tc.statusCode, statusCode)
+			require.Equal(t, contentType, header.Get(contentTypeHeader))
+		})
+	}
 }

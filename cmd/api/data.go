@@ -52,11 +52,6 @@ func validateURL(v *validator, url string) {
 	v.check(govalidator.IsURL(url), "url", "must be a valid URL")
 }
 
-func validateAlias(v *validator, alias string) {
-	v.check(alias != "", "alias", "must be provided")
-	v.check(len(alias) <= 11, "alias", "must not be more than 11 bytes long")
-}
-
 func (s service) createAlias(url string, reqID string) (string, error) {
 	var alias string
 	query := `SELECT alias FROM urls WHERE original_url = $1`

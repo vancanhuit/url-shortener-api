@@ -45,13 +45,6 @@ func (app *application) shorten(w http.ResponseWriter, r *http.Request) {
 
 func (app *application) remove(w http.ResponseWriter, r *http.Request) {
 	alias := chi.URLParam(r, "alias")
-
-	v := &validator{errors: make(map[string]string)}
-	if validateAlias(v, alias); !v.valid() {
-		failedValidationResponse(w, r, v.errors)
-		return
-	}
-
 	err := app.service.deleteURL(alias)
 	if err != nil {
 		switch {
@@ -68,13 +61,6 @@ func (app *application) remove(w http.ResponseWriter, r *http.Request) {
 
 func (app *application) redirect(w http.ResponseWriter, r *http.Request) {
 	alias := chi.URLParam(r, "alias")
-
-	v := &validator{errors: make(map[string]string)}
-	if validateAlias(v, alias); !v.valid() {
-		failedValidationResponse(w, r, v.errors)
-		return
-	}
-
 	url, err := app.service.getURL(alias)
 	if err != nil {
 		switch {
