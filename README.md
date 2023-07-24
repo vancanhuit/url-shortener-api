@@ -1,4 +1,4 @@
-# URL Shortener
+# Simple URL Shortener
 
 [![CI](https://github.com/vancanhuit/url-shortener-api/actions/workflows/go.yml/badge.svg?branch=main)](https://github.com/vancanhuit/url-shortener-api/actions/workflows/go.yml)
 
