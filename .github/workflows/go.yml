@@ -9,48 +9,56 @@ on:
   pull_request:
     branches: [ "main" ]
 
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    permissions:
-      # required for all workflows
-      security-events: write
-      # only required for workflows in private repositories
-      actions: read
-      contents: read
-    services:
-      dind:
-        image: docker:24.0.4-dind-rootless
-        ports:
-          - 2375:2375
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v3
+permissions:
+  contents: read
+  security-events: write
 
-    - name: Set up Go
-      uses: actions/setup-go@v4
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - uses: actions/setup-go@v4
       with:
         go-version: '1.20'
         check-latest: true
-
-    - name: Test
-      run: go test -cover -v ./...
-
-    - name: Lint
-      uses: golangci/golangci-lint-action@v3
+    - uses: golangci/golangci-lint-action@v3
       with:
         version: v1.53
         args: --timeout=15m --verbose
 
-    - name: Go vulnerability check
-      uses: golang/govulncheck-action@v1
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - uses: actions/setup-go@v4
+      with:
+        go-version: '1.20'
+        check-latest: true
+    - run: go test -cover -v ./...
 
-    - name: Run security scanner with gosec
-      uses: securego/gosec@master
+  vulnerability-check:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - uses: actions/setup-go@v4
+      with:
+        go-version: '1.20'
+        check-latest: true
+    - uses: golang/govulncheck-action@v1
+
+  security-scan:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - uses: actions/setup-go@v4
+    - uses: securego/gosec@master
       with:
         args: '-no-fail -fmt sarif -out results.sarif ./...'
-
-    - name: Upload SARIF file
-      uses: github/codeql-action/upload-sarif@v2
+    - uses: github/codeql-action/upload-sarif@v2
       with:
         sarif_file: results.sarif
