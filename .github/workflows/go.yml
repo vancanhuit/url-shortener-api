@@ -10,8 +10,9 @@ on:
     branches: [ "main" ]
 
 permissions:
-    # required for all workflows
-    security-events: write
+  # required for all workflows
+  contents: read
+  security-events: write
 
 jobs:
   lint:
