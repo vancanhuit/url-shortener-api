@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -55,8 +56,9 @@ func main() {
 	app := &application{service: service{db: db}}
 
 	server := &http.Server{
-		Addr:    fmt.Sprintf(":%d", port),
-		Handler: app.routes(),
+		Addr:        fmt.Sprintf(":%d", port),
+		Handler:     app.routes(),
+		ReadTimeout: 5 * time.Second,
 	}
 
 	log.Printf("HTTP server is listening on %s", server.Addr)
