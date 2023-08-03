@@ -70,8 +70,6 @@ func connectToTestDB(t *testing.T) (*sql.DB, error) {
 	dsn := fmt.Sprintf("postgres://test:test@localhost:%s/test?sslmode=disable", resource.GetPort("5432/tcp"))
 	log.Printf("Connecting to database: %s", dsn)
 
-	resource.Expire(120)
-
 	err = pool.Retry(func() error {
 		db, err = openDB(dsn)
 		return err
