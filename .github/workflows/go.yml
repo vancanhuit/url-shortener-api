@@ -19,7 +19,8 @@ jobs:
         ports:
           - 2375:2375
     steps:
-    - uses: actions/checkout@v3
+    - name: Checkout
+      uses: actions/checkout@v3
 
     - name: Set up Go
       uses: actions/setup-go@v4
@@ -37,5 +38,15 @@ jobs:
         version: v1.53
         args: --timeout=15m --verbose
 
-    - name: Go vulnerability check
+    - name: Go Vulnerability Check
       uses: golang/govulncheck-action@v1
+
+    - name: Run Gosec Security Scanner
+      uses: securego/gosec@master
+      with:
+        args: '-no-fail -fmt sarif -out results.sarif ./...'
+
+    - name: Upload SARIF file
+      uses: github/codeql-action/upload-sarif@v1
+      with:
+        sarif_file: results.sarif
