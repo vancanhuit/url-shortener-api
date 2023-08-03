@@ -9,11 +9,6 @@ on:
   pull_request:
     branches: [ "main" ]
 
-permissions:
-  # required for all workflows
-  contents: read
-  security-events: write
-
 jobs:
   lint:
     runs-on: ubuntu-latest
