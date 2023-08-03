@@ -15,14 +15,11 @@ jobs:
     permissions:
       # required for all workflows
       security-events: write
-      # only required for workflows in private repositories
-      actions: read
-      contents: read
-    services:
-      dind:
-        image: docker:24.0.4-dind-rootless
-        ports:
-          - 2375:2375
+    # services:
+    #   dind:
+    #     image: docker:24.0.4-dind-rootless
+    #     ports:
+    #       - 2375:2375
     steps:
     - name: Checkout
       uses: actions/checkout@v3
