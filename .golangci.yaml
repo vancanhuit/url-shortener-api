@@ -1,0 +1,18 @@
+run:
+  linters:
+  enable:
+    - bodyclose
+    - errcheck
+    - goimports
+    - exportloopref
+    - gosec
+    - gosimple
+    - govet
+    - ineffassign
+    - misspell
+    - rowserrcheck
+    - sqlclosecheck
+    - staticcheck
+    - typecheck
+    - unparam
+    - unused
