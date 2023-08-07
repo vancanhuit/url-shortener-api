@@ -80,7 +80,7 @@ func connectToTestDB(t *testing.T) (*sql.DB, error) {
 	return db, nil
 }
 
-func newTestServer(t *testing.T, h http.Handler) *testServer {
+func newTestServer(h http.Handler) *testServer {
 	ts := httptest.NewServer(h)
 	ts.Client().CheckRedirect = func(req *http.Request, via []*http.Request) error {
 		return http.ErrUseLastResponse
@@ -112,7 +112,7 @@ func TestAPIWithValidInput(t *testing.T) {
 	require.NoError(t, err)
 
 	app := &application{service: service{db: db}}
-	ts := newTestServer(t, app.routes())
+	ts := newTestServer(app.routes())
 	defer ts.Close()
 
 	url := "https://reddit.com"
@@ -165,7 +165,7 @@ func TestAPIWithInvalidInput(t *testing.T) {
 	require.NoError(t, err)
 
 	app := &application{service: service{db: db}}
-	ts := newTestServer(t, app.routes())
+	ts := newTestServer(app.routes())
 	defer ts.Close()
 
 	largeData := make([]byte, maxBytes)
