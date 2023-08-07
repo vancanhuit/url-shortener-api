@@ -13,13 +13,13 @@ func (app *application) shorten(w http.ResponseWriter, r *http.Request) {
 		URL string `json:"url"`
 	}
 	if err := readJSON(w, r, &input); err != nil {
-		badRequestResponse(w, r, err)
+		badRequestResponse(w, err)
 		return
 	}
 
 	v := &validator{errors: make(map[string]string)}
 	if validateURL(v, input.URL); !v.valid() {
-		failedValidationResponse(w, r, v.errors)
+		failedValidationResponse(w, v.errors)
 		return
 	}
 
@@ -27,7 +27,7 @@ func (app *application) shorten(w http.ResponseWriter, r *http.Request) {
 
 	alias, err := app.service.createAlias(input.URL, reqID)
 	if err != nil {
-		serverErrorResponse(w, r, err)
+		serverErrorResponse(w, err)
 		return
 	}
 
@@ -39,7 +39,7 @@ func (app *application) shorten(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := writeJSON(w, http.StatusCreated, data); err != nil {
-		serverErrorResponse(w, r, err)
+		serverErrorResponse(w, err)
 	}
 }
 
@@ -51,7 +51,7 @@ func (app *application) delete(w http.ResponseWriter, r *http.Request) {
 		case errors.Is(err, errRecordNotFound):
 			notFoundResponse(w, r)
 		default:
-			serverErrorResponse(w, r, err)
+			serverErrorResponse(w, err)
 		}
 		return
 	}
@@ -67,7 +67,7 @@ func (app *application) redirect(w http.ResponseWriter, r *http.Request) {
 		case errors.Is(err, errRecordNotFound):
 			notFoundResponse(w, r)
 		default:
-			serverErrorResponse(w, r, err)
+			serverErrorResponse(w, err)
 		}
 		return
 	}
