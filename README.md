@@ -1,6 +1,6 @@
 # Simple URL Shortener
 
-[![CI](https://github.com/vancanhuit/url-shortener-api/actions/workflows/go.yml/badge.svg?branch=main)](https://github.com/vancanhuit/url-shortener-api/actions/workflows/go.yml)
+[![CI](https://github.com/vancanhuit/url-shortener-api/actions/workflows/ci.yml/badge.svg)](https://github.com/vancanhuit/url-shortener-api/actions/workflows/ci.yml)
 
 Running test: `go test -v -cover ./...`
 
