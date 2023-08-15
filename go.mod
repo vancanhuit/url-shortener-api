@@ -7,7 +7,7 @@ require (
 	github.com/go-chi/chi/v5 v5.0.10
 	github.com/jackc/pgx/v5 v5.4.3
 	github.com/ory/dockertest/v3 v3.10.0
-	github.com/pressly/goose/v3 v3.14.0
+	github.com/pressly/goose/v3 v3.15.0
 	github.com/stretchr/testify v1.8.4
 )
 
