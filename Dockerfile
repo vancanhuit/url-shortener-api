@@ -1,4 +1,4 @@
-FROM golang:1.21-bullseye as builder
+FROM golang:1.21-bookworm as builder
 
 WORKDIR /go/src
 COPY go.mod .
@@ -8,7 +8,7 @@ COPY cmd/api/ ./cmd/api
 COPY migrations/ ./migrations
 RUN go build -ldflags="-w -s" -o /go/bin/api ./cmd/api
 
-FROM gcr.io/distroless/base-debian11
+FROM gcr.io/distroless/base-debian12
 
 COPY --from=builder /go/bin/api /
 USER nonroot:nonroot
