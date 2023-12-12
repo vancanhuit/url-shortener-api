@@ -5,7 +5,7 @@ go 1.21
 require (
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2
 	github.com/go-chi/chi/v5 v5.0.10
-	github.com/jackc/pgx/v5 v5.5.0
+	github.com/jackc/pgx/v5 v5.5.1
 	github.com/ory/dockertest/v3 v3.10.0
 	github.com/pressly/goose/v3 v3.16.0
 	github.com/stretchr/testify v1.8.4
