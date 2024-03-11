@@ -5,7 +5,7 @@ go 1.22
 require (
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2
 	github.com/go-chi/chi/v5 v5.0.12
-	github.com/jackc/pgx/v5 v5.5.4
+	github.com/jackc/pgx/v5 v5.5.5
 	github.com/ory/dockertest/v3 v3.10.0
 	github.com/pressly/goose/v3 v3.18.0
 	github.com/stretchr/testify v1.9.0
