@@ -7,7 +7,7 @@ require (
 	github.com/go-chi/chi/v5 v5.1.0
 	github.com/jackc/pgx/v5 v5.7.0
 	github.com/ory/dockertest/v3 v3.11.0
-	github.com/pressly/goose/v3 v3.21.1
+	github.com/pressly/goose/v3 v3.22.0
 	github.com/stretchr/testify v1.9.0
 )
 
@@ -46,7 +46,7 @@ require (
 	github.com/xeipuuv/gojsonschema v1.2.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/crypto v0.25.0 // indirect
-	golang.org/x/sync v0.7.0 // indirect
+	golang.org/x/sync v0.8.0 // indirect
 	golang.org/x/sys v0.22.0 // indirect
 	golang.org/x/text v0.16.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
