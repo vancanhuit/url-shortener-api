@@ -32,7 +32,7 @@ jobs:
         check-latest: true
     - uses: golangci/golangci-lint-action@v4
       with:
-        version: v1.57.1
+        version: v1.63.4
         args: --timeout=15m --verbose
 
   test:
