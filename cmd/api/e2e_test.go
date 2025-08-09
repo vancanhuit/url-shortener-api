@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -38,11 +39,13 @@ func setupTestDB(t *testing.T, dbName string) string {
 
 	_, err = db.Exec(fmt.Sprintf("CREATE DATABASE %s", dbName))
 	require.NoError(t, err)
+	t.Logf("Created test database %s", dbName)
 	t.Cleanup(func() {
 		_, err := db.Exec(fmt.Sprintf("DROP DATABASE %s", dbName))
 		if err != nil {
 			t.Logf("Failed to drop database %s: %v", dbName, err)
 		}
+		t.Logf("Dropped test database %s", dbName)
 		if err := db.Close(); err != nil {
 			t.Logf("Failed to close database connection: %v", err)
 		}
@@ -96,7 +99,10 @@ func TestAPIWithValidInput(t *testing.T) {
 	err = migrateDB(db)
 	require.NoError(t, err)
 
-	app := &application{service: service{db: db}}
+	app := &application{
+		service: service{db: db},
+		logger:  slog.New(slog.DiscardHandler),
+	}
 	ts := newTestServer(app.routes())
 	defer ts.Close()
 
@@ -154,7 +160,10 @@ func TestAPIWithInvalidInput(t *testing.T) {
 	err = migrateDB(db)
 	require.NoError(t, err)
 
-	app := &application{service: service{db: db}}
+	app := &application{
+		service: service{db: db},
+		logger:  slog.New(slog.DiscardHandler),
+	}
 	ts := newTestServer(app.routes())
 	defer ts.Close()
 
