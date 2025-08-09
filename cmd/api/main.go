@@ -68,10 +68,10 @@ func main() {
 		ReadTimeout: 5 * time.Second,
 	}
 
-	logger.Info("HTTP server is listening on %s", "addr", server.Addr)
+	logger.Info("started http server", "addr", server.Addr)
 	err = server.ListenAndServe()
 	if err != nil {
-		logger.Error("failed to start HTTP server", "error", err.Error())
+		logger.Error("failed to start http server", "error", err.Error())
 		os.Exit(1)
 	}
 }
