@@ -43,7 +43,9 @@ func setupTestDB(t *testing.T, dbName string) string {
 		if err != nil {
 			t.Logf("Failed to drop database %s: %v", dbName, err)
 		}
-		db.Close() //nolint:errcheck
+		if err := db.Close(); err != nil {
+			t.Logf("Failed to close database connection: %v", err)
+		}
 	})
 	return parsedURL.String()
 }
@@ -87,7 +89,9 @@ func TestAPIWithValidInput(t *testing.T) {
 	db, err := connectToTestDB(t)
 	require.NoError(t, err)
 	t.Cleanup(func() {
-		db.Close() //nolint:errcheck
+		if err := db.Close(); err != nil {
+			t.Logf("Failed to close database connection: %v", err)
+		}
 	})
 	err = migrateDB(db)
 	require.NoError(t, err)
@@ -143,7 +147,9 @@ func TestAPIWithInvalidInput(t *testing.T) {
 	db, err := connectToTestDB(t)
 	require.NoError(t, err)
 	t.Cleanup(func() {
-		db.Close() //nolint:errcheck
+		if err := db.Close(); err != nil {
+			t.Logf("Failed to close database connection: %v", err)
+		}
 	})
 	err = migrateDB(db)
 	require.NoError(t, err)
