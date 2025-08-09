@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"context"
 	"crypto/rand"
 	"database/sql"
 	"encoding/base64"
@@ -15,7 +14,6 @@ import (
 	"os"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/require"
 )
@@ -34,20 +32,18 @@ func setupTestDB(t *testing.T, dbName string) string {
 	dsn := os.Getenv("TEST_DATABASE_DSN")
 	db, err := openDB(dsn)
 	require.NoError(t, err)
-
 	parsedURL, err := url.Parse(dsn)
 	require.NoError(t, err)
 	parsedURL.Path = dbName
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-	_, err = db.ExecContext(ctx, fmt.Sprintf("CREATE DATABASE %s", dbName))
+	_, err = db.Exec(fmt.Sprintf("CREATE DATABASE %s", dbName))
 	require.NoError(t, err)
 	t.Cleanup(func() {
-		_, err := db.ExecContext(ctx, fmt.Sprintf("DROP DATABASE %s", dbName))
+		_, err := db.Exec(fmt.Sprintf("DROP DATABASE %s", dbName))
 		if err != nil {
 			t.Logf("Failed to drop database %s: %v", dbName, err)
 		}
+		db.Close() //nolint:errcheck
 	})
 	return parsedURL.String()
 }
@@ -90,6 +86,9 @@ func (ts *testServer) do(t *testing.T, method, urlPath string, reqBody io.Reader
 func TestAPIWithValidInput(t *testing.T) {
 	db, err := connectToTestDB(t)
 	require.NoError(t, err)
+	t.Cleanup(func() {
+		db.Close() //nolint:errcheck
+	})
 	err = migrateDB(db)
 	require.NoError(t, err)
 
@@ -143,6 +142,9 @@ func TestAPIWithValidInput(t *testing.T) {
 func TestAPIWithInvalidInput(t *testing.T) {
 	db, err := connectToTestDB(t)
 	require.NoError(t, err)
+	t.Cleanup(func() {
+		db.Close() //nolint:errcheck
+	})
 	err = migrateDB(db)
 	require.NoError(t, err)
 
