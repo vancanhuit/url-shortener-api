@@ -3,7 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"time"
@@ -14,6 +14,7 @@ import (
 
 type application struct {
 	service service
+	logger  *slog.Logger
 }
 
 func (app *application) routes() http.Handler {
@@ -24,8 +25,8 @@ func (app *application) routes() http.Handler {
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 
-	r.NotFound(notFoundResponse)
-	r.MethodNotAllowed(methodNotAllowedResponse)
+	r.NotFound(app.notFoundResponse)
+	r.MethodNotAllowed(app.methodNotAllowedResponse)
 
 	r.Post("/api/shorten", app.shorten)
 	r.Delete("/{alias}", app.delete)
@@ -35,6 +36,8 @@ func (app *application) routes() http.Handler {
 }
 
 func main() {
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{AddSource: true}))
+
 	var port int
 	var dsn string
 
@@ -44,16 +47,20 @@ func main() {
 
 	db, err := openDB(dsn)
 	if err != nil {
-		log.Fatal(err)
+		logger.Error("failed to establish database connection pool", "error", err.Error())
+		os.Exit(1)
 	}
 	defer db.Close()
-	log.Println("Database connection pool established")
+	logger.Info("database connection pool established")
 	err = migrateDB(db)
 	if err != nil {
-		log.Fatal(err)
+		logger.Error("failed to migrate database", "err", err.Error())
 	}
 
-	app := &application{service: service{db: db}}
+	app := &application{
+		service: service{db: db},
+		logger:  logger,
+	}
 
 	server := &http.Server{
 		Addr:        fmt.Sprintf(":%d", port),
@@ -61,6 +68,10 @@ func main() {
 		ReadTimeout: 5 * time.Second,
 	}
 
-	log.Printf("HTTP server is listening on %s", server.Addr)
-	log.Fatal(server.ListenAndServe())
+	logger.Info("HTTP server is listening on %s", "addr", server.Addr)
+	err = server.ListenAndServe()
+	if err != nil {
+		logger.Error("failed to start HTTP server", "error", err.Error())
+		os.Exit(1)
+	}
 }
