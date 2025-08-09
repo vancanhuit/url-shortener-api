@@ -36,7 +36,7 @@ func (app *application) routes() http.Handler {
 }
 
 func main() {
-	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{AddSource: true}))
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 
 	var port int
 	var dsn string
@@ -50,7 +50,7 @@ func main() {
 		logger.Error("failed to establish database connection pool", "error", err.Error())
 		os.Exit(1)
 	}
-	defer db.Close()
+	defer db.Close() //nolint:errcheck
 	logger.Info("database connection pool established")
 	err = migrateDB(db)
 	if err != nil {
@@ -68,10 +68,10 @@ func main() {
 		ReadTimeout: 5 * time.Second,
 	}
 
-	logger.Info("HTTP server is listening on %s", "addr", server.Addr)
+	logger.Info("started http server", "addr", server.Addr)
 	err = server.ListenAndServe()
 	if err != nil {
-		logger.Error("failed to start HTTP server", "error", err.Error())
+		logger.Error("failed to start http server", "error", err.Error())
 		os.Exit(1)
 	}
 }

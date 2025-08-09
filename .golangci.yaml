@@ -1,17 +1,18 @@
+version: "2"
+
+run:
+  timeout: "15m"
+
 linters:
   enable:
     - bodyclose
     - errcheck
-    - goimports
-    - exportloopref
     - gosec
-    - gosimple
     - govet
     - ineffassign
     - misspell
     - rowserrcheck
     - sqlclosecheck
     - staticcheck
-    - typecheck
     - unparam
     - unused
