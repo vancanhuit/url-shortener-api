@@ -2,19 +2,21 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"crypto/rand"
 	"database/sql"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
+	"os"
 	"strings"
 	"testing"
+	"time"
 
-	"github.com/ory/dockertest/v3"
 	"github.com/stretchr/testify/require"
 )
 
@@ -22,58 +24,38 @@ type testServer struct {
 	*httptest.Server
 }
 
-var pool *dockertest.Pool
-
-func getPool() (*dockertest.Pool, error) {
-	if pool != nil {
-		return pool, nil
-	}
-	var err error
-	pool, err = dockertest.NewPool("")
-	return pool, err
+func randomDBName() string {
+	var buf [20]byte
+	_, _ = rand.Read(buf[:])
+	return fmt.Sprintf("test_db_%x", buf)
 }
 
-func startPostgreSQL() (*dockertest.Resource, error) {
-	pool, err := getPool()
+func setupTestDB(t *testing.T, dbName string) string {
+	dsn := os.Getenv("TEST_DATABASE_DSN")
+	db, err := openDB(dsn)
+	require.NoError(t, err)
 
-	if err != nil {
-		return nil, err
-	}
+	parsedURL, err := url.Parse(dsn)
+	require.NoError(t, err)
+	parsedURL.Path = dbName
 
-	if err := pool.Client.Ping(); err != nil {
-		return nil, err
-	}
-
-	return pool.RunWithOptions(&dockertest.RunOptions{
-		Repository: "postgres",
-		Tag:        "15.3",
-		Env: []string{
-			"POSTGRES_USER=test",
-			"POSTGRES_PASSWORD=test",
-			"POSTGRES_DB=test",
-		},
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	_, err = db.ExecContext(ctx, fmt.Sprintf("CREATE DATABASE %s", dbName))
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		_, err := db.ExecContext(ctx, fmt.Sprintf("DROP DATABASE %s", dbName))
+		if err != nil {
+			t.Logf("Failed to drop database %s: %v", dbName, err)
+		}
 	})
+	return parsedURL.String()
 }
 
 func connectToTestDB(t *testing.T) (*sql.DB, error) {
-	resource, err := startPostgreSQL()
-	if err != nil {
-		return nil, err
-	}
-	t.Cleanup(func() {
-		if err := pool.Purge(resource); err != nil {
-			log.Printf("Failed to purge resource: %s", err)
-		}
-	})
-
-	var db *sql.DB
-	dsn := fmt.Sprintf("postgres://test:test@localhost:%s/test?sslmode=disable", resource.GetPort("5432/tcp"))
-	log.Printf("Connecting to database: %s", dsn)
-
-	err = pool.Retry(func() error {
-		db, err = openDB(dsn)
-		return err
-	})
+	dbName := randomDBName()
+	dsn := setupTestDB(t, dbName)
+	db, err := openDB(dsn)
 	if err != nil {
 		return nil, err
 	}
