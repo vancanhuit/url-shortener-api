@@ -36,7 +36,7 @@ func (app *application) routes() http.Handler {
 }
 
 func main() {
-	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{AddSource: true}))
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 
 	var port int
 	var dsn string
