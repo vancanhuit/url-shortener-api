@@ -50,7 +50,7 @@ func main() {
 		logger.Error("failed to establish database connection pool", "error", err.Error())
 		os.Exit(1)
 	}
-	defer db.Close()
+	defer db.Close() //nolint:errcheck
 	logger.Info("database connection pool established")
 	err = migrateDB(db)
 	if err != nil {

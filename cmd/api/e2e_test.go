@@ -78,7 +78,7 @@ func (ts *testServer) do(t *testing.T, method, urlPath string, reqBody io.Reader
 	}
 	resp, err := ts.Client().Do(req)
 	require.NoError(t, err)
-	defer resp.Body.Close()
+	defer resp.Body.Close() //nolint:errcheck
 
 	body, err := io.ReadAll(resp.Body)
 	require.NoError(t, err)
