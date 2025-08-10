@@ -1,6 +1,8 @@
 # Simple URL Shortener
 
-[![CI](https://github.com/vancanhuit/url-shortener-api/actions/workflows/ci.yml/badge.svg)](https://github.com/vancanhuit/url-shortener-api/actions/workflows/ci.yml)
+[![CI](https://github.com/vancanhuit/url-shortener-api/actions/workflows/go.yml/badge.svg?branch=main)](https://github.com/vancanhuit/url-shortener-api/actions/workflows/go.yml)
+[![CodeQL Advanced](https://github.com/vancanhuit/url-shortener-api/actions/workflows/codeql.yml/badge.svg?branch=main)](https://github.com/vancanhuit/url-shortener-api/actions/workflows/codeql.yml)
+[![Dependabot Updates](https://github.com/vancanhuit/url-shortener-api/actions/workflows/dependabot/dependabot-updates/badge.svg?branch=main)](https://github.com/vancanhuit/url-shortener-api/actions/workflows/dependabot/dependabot-updates)
 
 Install the following tools:
 * [Golang](https://go.dev/dl/)
