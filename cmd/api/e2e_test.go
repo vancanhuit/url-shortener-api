@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"crypto/rand"
 	"database/sql"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -208,7 +207,7 @@ func TestAPIWithInvalidInput(t *testing.T) {
 		},
 		{
 			name:       `Request too large`,
-			payload:    fmt.Sprintf(`{"url": "https://%s"}`, base64.URLEncoding.EncodeToString(largeData)),
+			payload:    fmt.Sprintf(`{"url": "https://%x"}`, string(largeData)),
 			statusCode: http.StatusBadRequest,
 		},
 		{
@@ -223,7 +222,7 @@ func TestAPIWithInvalidInput(t *testing.T) {
 		},
 		{
 			name:       "Length of URL is more than 500 bytes",
-			payload:    fmt.Sprintf(`{"url": "https://%s"}`, base64.URLEncoding.EncodeToString(largeData[:500])),
+			payload:    fmt.Sprintf(`{"url": "https://%x"}`, string(largeData[:500])),
 			statusCode: http.StatusUnprocessableEntity,
 		},
 	}
