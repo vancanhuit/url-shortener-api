@@ -55,6 +55,7 @@ func main() {
 	err = migrateDB(db)
 	if err != nil {
 		logger.Error("failed to migrate database", "err", err.Error())
+		os.Exit(1)
 	}
 
 	app := &application{
